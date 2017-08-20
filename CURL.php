@@ -1,6 +1,6 @@
 <?php
-$username = "bareta";
-$password = "m1nstr3l";
+$username = "user";
+$password = "pass";
 $curl = curl_init();
 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
