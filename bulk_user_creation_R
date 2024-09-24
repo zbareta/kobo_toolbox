@@ -90,5 +90,5 @@ users_to_create <- list(
 
 # Create users
 for (user in users_to_create) {
-  create_user(user[[1]], user[[2]], user[[3]], user[[4]]))
+  create_user(user[[1]], user[[2]], user[[3]], user[[4]])
 }
