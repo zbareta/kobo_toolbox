@@ -1,0 +1,94 @@
+# Load necessary libraries
+library(httr)
+library(rvest)
+
+# Function to create a user
+create_user <- function(name, username, email, password) {
+  # Start a session
+  session <- session("https://kobo-trn.unhcr.org/accounts/signup/")
+  
+  # Step 1: Get the signup page to retrieve the CSRF token
+  response <- GET(session$url)
+  
+  # Check if the page was retrieved successfully
+  if (status_code(response) != 200) {
+    cat(sprintf("Failed to load signup page. Status code: %d\n", status_code(response)))
+    return(NULL)
+  }
+  
+  # Step 2: Extract the CSRF token from the page
+  page <- content(response, as = "text")
+  soup <- read_html(page)
+  csrf_token <- html_attr(html_node(soup, "input[name='csrfmiddlewaretoken']"), "value")
+  
+  # Log the extracted CSRF token
+  cat(sprintf("CSRF Token extracted for %s: %s\n", username, csrf_token))
+  
+  # Step 3: Prepare the payload with the extracted CSRF token and user data
+  payload <- list(
+    csrfmiddlewaretoken = csrf_token,
+    name = name,
+    username = username,
+    email = email,
+    country = "CHE",  # Change as needed
+    sector = "Humanitarian - Protection",  # Change as needed
+    organization = "UNHCR",  # Change as needed
+    organization_website = "",
+    gender = "other",  # Change as needed
+    terms_of_service = "on",
+    password1 = password,
+    password2 = password,
+    `Create Account` = ""
+  )
+  
+  # Log the payload data
+  cat("Payload data to be sent:\n")
+  print(payload)
+  
+  # Step 4: Include the Referer header and Content-Type header in the POST request
+  headers <- add_headers(
+    Referer = "https://kobo-trn.unhcr.org/accounts/signup/",
+    `Content-Type` = "application/x-www-form-urlencoded"
+  )
+  
+  # Step 5: Submit the form data as form-encoded
+  create_account_url <- "https://kobo-trn.unhcr.org/accounts/signup/"
+  response <- POST(create_account_url, body = payload, encode = "form", headers)
+  
+  # Log the response status
+  cat(sprintf("Response status code for %s: %d\n", username, status_code(response)))
+  
+  # Save the response content to a file
+  writeLines(content(response, as = "text"), paste0("response_content_", username, ".html"))
+  cat(sprintf("Response content for %s has been saved to 'response_content_%s.html'\n", username, username))
+  
+  # Step 6: Parse the response for validation errors
+  response_page <- content(response, as = "text")
+  soup_response <- read_html(response_page)
+  error_list <- html_nodes(soup_response, "ul.errorlist")
+  
+  # Display any validation errors found
+  if (length(error_list) > 0) {
+    cat("Validation errors found for", username, ":\n")
+    for (error in error_list) {
+      li_items <- html_nodes(error, "li")
+      for (li in li_items) {
+        cat(sprintf(" - %s\n", html_text(li)))
+      }
+    }
+  } else {
+    cat(sprintf("No validation errors found for %s.\n", username))
+  }
+}
+
+# List of users to create (Name, Username, Email, Password)
+users_to_create <- list(
+  list("ENTER_NAME", "ENTER_USERNAME", "ENTER_EMAIL@unhcr.org", "ENTER_PASSWORD"),
+  list("ENTER_NAME", "ENTER_USERNAME", "ENTER_EMAIL@unhcr.org", "ENTER_PASSWORD"),
+  list("ENTER_NAME", "ENTER_USERNAME", "ENTER_EMAIL@unhcr.org", "ENTER_PASSWORD")
+)
+
+# Create users
+for (user in users_to_create) {
+  create_user(user[[1]], user[[2]], user[[3]], user[[4]]))
+}
