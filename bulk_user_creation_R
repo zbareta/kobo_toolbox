@@ -1,11 +1,14 @@
-# Load necessary libraries
+if (!require(httr)) install.packages("httr")
+if (!require(rvest)) install.packages("rvest")
+if (!require(readxl)) install.packages("readxl")
 library(httr)
 library(rvest)
+library(readxl)
 
 # Function to create a user
 create_user <- function(name, username, email, password) {
   # Start a session
-  session <- session("https://kobo-trn.unhcr.org/accounts/signup/")
+  session <- session("https://kobo.unhcr.org/accounts/signup/")
   
   # Step 1: Get the signup page to retrieve the CSRF token
   response <- GET(session$url)
@@ -47,20 +50,17 @@ create_user <- function(name, username, email, password) {
   
   # Step 4: Include the Referer header and Content-Type header in the POST request
   headers <- add_headers(
-    Referer = "https://kobo-trn.unhcr.org/accounts/signup/",
+    Referer = "https://kobo.unhcr.org/accounts/signup/",
     `Content-Type` = "application/x-www-form-urlencoded"
   )
   
   # Step 5: Submit the form data as form-encoded
-  create_account_url <- "https://kobo-trn.unhcr.org/accounts/signup/"
+  create_account_url <- "https://kobo.unhcr.org/accounts/signup/"
   response <- POST(create_account_url, body = payload, encode = "form", headers)
   
   # Log the response status
   cat(sprintf("Response status code for %s: %d\n", username, status_code(response)))
   
-  # Save the response content to a file
-  writeLines(content(response, as = "text"), paste0("response_content_", username, ".html"))
-  cat(sprintf("Response content for %s has been saved to 'response_content_%s.html'\n", username, username))
   
   # Step 6: Parse the response for validation errors
   response_page <- content(response, as = "text")
@@ -81,14 +81,17 @@ create_user <- function(name, username, email, password) {
   }
 }
 
-# List of users to create (Name, Username, Email, Password)
-users_to_create <- list(
-  list("ENTER_NAME", "ENTER_USERNAME", "ENTER_EMAIL@unhcr.org", "ENTER_PASSWORD"),
-  list("ENTER_NAME", "ENTER_USERNAME", "ENTER_EMAIL@unhcr.org", "ENTER_PASSWORD"),
-  list("ENTER_NAME", "ENTER_USERNAME", "ENTER_EMAIL@unhcr.org", "ENTER_PASSWORD")
-)
+# Read user data from an Excel file
+# Adjust the file path and sheet name as necessary
+user_data <- read_excel("C:/Users/BARETA/user_data2.xlsx", sheet = "data")
 
-# Create users
-for (user in users_to_create) {
-  create_user(user[[1]], user[[2]], user[[3]], user[[4]])
+# Create users from the Excel data
+for (i in 1:nrow(user_data)) {
+  create_user(user_data$name[i], user_data$username[i], user_data$email[i], user_data$password[i])
+  
+  # Pause for 1 minute after every 20 users
+  if (i %% 20 == 0) {
+    cat("Pausing for 1 minute...\n")
+    Sys.sleep(60)  # Pause for 60 seconds (1 minute)
+  }
 }
